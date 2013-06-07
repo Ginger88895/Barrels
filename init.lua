@@ -73,7 +73,34 @@ minetest.register_node("barrels:barrel", {
 	description = "Barrel",
 	tiles = {"barrels_barrel_side.png"},
 	paramtype2 = "facedir",
-	groups = {cracky=2},
+	groups = {cracky=2, tubedevice=1,tubedevice_receiver=1,},
+	tube={insert_object=function(pos,node,stack,direction)
+		local meta=minetest.env:get_meta(pos)
+		local inv=meta:get_inventory()
+		if stack:get_name() == meta:get_string("item") then
+		meta:set_int("item_amount",meta:get_int("item_amount")+stack:get_count())
+		stack:clear()
+		return stack
+		end
+		if meta:get_int("item_amount") == 0 then
+		meta:set_int("item_amount",meta:get_int("item_amount")+stack:get_count())
+		meta:set_string("item",stack:get_name())
+		update_item(pos,node)
+		stack:clear()
+		return stack
+		end
+		end,
+		can_insert=function(pos,node,stack,direction)
+		local meta=minetest.env:get_meta(pos)
+		local inv=meta:get_inventory()
+		if stack:get_name() == meta:get_string("item") then
+		return true
+			end
+			if meta:get_int("item_amount") == 0 then
+		return true
+			end
+		end,
+		},
 	legacy_facedir_simple = true,
 	sounds = default.node_sound_stone_defaults(),
 	on_construct = function(pos)
@@ -127,8 +154,9 @@ minetest.register_on_punchnode(function(pos, node, puncher)
 
 		minetest.env:add_item(puncher:getpos(),stack2)
 		meta:set_int("item_amount",meta:get_int("item_amount")-99)
-		if meta:get_int("item_amount") > 1 then
+		if meta:get_int("item_amount") < 1 then
 		meta:set_string("item","")
+		meta:set_int("item_amount",0)
 		update_item(pos,node)
 		end
 		return
@@ -140,6 +168,7 @@ minetest.register_on_punchnode(function(pos, node, puncher)
 		meta:set_int("item_amount",meta:get_int("item_amount")-meta:get_int("item_amount"))
 		if meta:get_int("item_amount") < 1 then
 			meta:set_string("item","")
+			meta:set_int("item_amount",0)
 			update_item(pos,node)
 		end
 		end
@@ -151,6 +180,7 @@ end
 		meta:set_int("item_amount",meta:get_int("item_amount")-1)
 		if meta:get_int("item_amount") < 1 then
 			meta:set_string("item","")
+			meta:set_int("item_amount",0)
 			update_item(pos,node)
 		end
 		return
