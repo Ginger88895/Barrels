@@ -188,8 +188,121 @@ end
 end
 end)
 
+minetest.register_alias("locked_barrel","barrels:locked_barrel")
+minetest.register_craft({
+	output = 'barrels:locked_barrel,2',
+	recipe = {
+		{'default:tree','default:tree', 'default:tree'},
+		{'default:tree', 'default:steel_ingot', 'default:tree'},
+		{'default:tree', 'default:tree', 'default:tree'},
+	}
+})
+
+minetest.register_node("barrels:locked_barrel", {
+	description = "Locked Barrel",
+	tiles = {"barrels_locked_barrel_side.png"},
+	paramtype2 = "facedir",
+	groups = {cracky=2,},
+	legacy_facedir_simple = true,
+	sounds = default.node_sound_stone_defaults(),
+	on_construct = function(pos)
+		local meta = minetest.env:get_meta(pos)
+		local item = ""
+		local item_amount = 0
+	end,
+after_place_node = function(pos, placer)
+		local meta = minetest.env:get_meta(pos)
+		meta:set_string("owner",placer:get_player_name())
+
+	end,
+	
+	can_dig = function(pos,player)
+		local meta = minetest.env:get_meta(pos);
+		if not(meta:get_string("item") == "")then
+			return false
+			end
+		return true
+	end,
+	on_rightclick = function(pos, node, player, itemstack)
+		local keys = {}
+	local itemp = itemstack
+	local meta = minetest.env:get_meta(pos); 
+if player:get_player_name() == meta:get_string("owner") then
+if itemstack:get_stack_max() > 1 then
+if meta:get_string("item") == itemstack:get_name()  then
+meta:set_int("item_amount",meta:get_int("item_amount")+itemstack:get_count())
+minetest.debug(meta:get_int("item_amount"))
+itemstack:clear()
+end
+if meta:get_string("item") == "" then
+meta:set_string("item",itemp:get_name() )
+meta:set_int("item_amount",meta:get_int("item_amount")+itemstack:get_count())
+minetest.debug(meta:get_int("item_amount"))
+itemstack:clear()
+update_item(pos,node)
+end
+end
+if itemstack:get_name() == "barrels:barrels_checker" then
+local items_amount = meta:get_int("item_amount")
+minetest.chat_send_player(player:get_player_name(),items_amount.." "..meta:get_string("item"),true)
+end
+end
+end,
+})
+
+minetest.register_on_punchnode(function(pos, node, puncher)
+	if node.name == "barrels:locked_barrel" then
+			local keys = {}
+		keys = puncher:get_player_control()
+		local meta = minetest.env:get_meta(pos); 
+		local stack1 = meta:get_string("item")
+minetest.debug(puncher:get_player_name())
+minetest.debug(meta:get_string("owner"))
+if puncher:get_player_name() == meta:get_string("owner") then
+		local stack2 = stack1.." 99"
+		local items = meta:get_int("item_amount")
+		if keys["sneak"] == true then
+	if meta:get_int("item_amount")  >= 99 then
+
+		minetest.env:add_item(puncher:getpos(),stack2)
+		meta:set_int("item_amount",meta:get_int("item_amount")-99)
+		if meta:get_int("item_amount") < 1 then
+		meta:set_string("item","")
+		meta:set_int("item_amount",0)
+		update_item(pos,node)
+		end
+		return
+	end
+	if meta:get_int("item_amount")  < 99 then
+		if meta:get_int("item_amount")  > 0 then
+		local stack2 = stack1.." "..items
+		minetest.env:add_item(puncher:getpos(),stack2)
+		meta:set_int("item_amount",meta:get_int("item_amount")-meta:get_int("item_amount"))
+		if meta:get_int("item_amount") < 1 then
+			meta:set_string("item","")
+			meta:set_int("item_amount",0)
+			update_item(pos,node)
+		end
+		end
+		return
+	end
+end
+	if keys["sneak"] == false then
+		minetest.env:add_item(puncher:getpos(),stack1)
+		meta:set_int("item_amount",meta:get_int("item_amount")-1)
+		if meta:get_int("item_amount") < 1 then
+			meta:set_string("item","")
+			meta:set_int("item_amount",0)
+			update_item(pos,node)
+		end
+		return
+end
+end
+end
+end)
+
 minetest.register_abm({
-	nodenames = {"barrels:barrel"},
+	nodenames = {"barrels:barrel","barrels:locked_barrel"},
 	interval = 1.0,
 	chance = 2,
 	action = function(pos, node, active_object_count, active_object_count_wider)
