@@ -149,10 +149,18 @@ minetest.register_on_punchnode(function(pos, node, puncher)
 		local stack1 = meta:get_string("item")
 		local stack2 = stack1.." 99"
 		local items = meta:get_int("item_amount")
+		local inv=puncher:get_inventory()
+		local room1 = inv:room_for_item("main",stack2)
 		if keys["sneak"] == true then
 	if meta:get_int("item_amount")  >= 99 then
 
+		if room1 == true then
+			inv:add_item("main",stack2)
+		end
+		if room1 == false then
 		minetest.env:add_item(puncher:getpos(),stack2)
+		end
+
 		meta:set_int("item_amount",meta:get_int("item_amount")-99)
 		if meta:get_int("item_amount") < 1 then
 		meta:set_string("item","")
@@ -164,7 +172,13 @@ minetest.register_on_punchnode(function(pos, node, puncher)
 	if meta:get_int("item_amount")  < 99 then
 		if meta:get_int("item_amount")  > 0 then
 		local stack2 = stack1.." "..items
-		minetest.env:add_item(puncher:getpos(),stack2)
+		local room1 = inv:room_for_item("main",stack2)
+		if room1 == true then
+			inv:add_item("main",stack2)
+		end
+		if room1 == false then
+			minetest.env:add_item(puncher:getpos(),stack2)
+		end
 		meta:set_int("item_amount",meta:get_int("item_amount")-meta:get_int("item_amount"))
 		if meta:get_int("item_amount") < 1 then
 			meta:set_string("item","")
@@ -176,7 +190,13 @@ minetest.register_on_punchnode(function(pos, node, puncher)
 	end
 end
 	if keys["sneak"] == false then
-		minetest.env:add_item(puncher:getpos(),stack1)
+			local room1 = inv:room_for_item("main",stack1)
+		if room1 == true then
+			inv:add_item("main",stack1)
+		end
+		if room1 == false then
+			minetest.env:add_item(puncher:getpos(),stack1)
+		end
 		meta:set_int("item_amount",meta:get_int("item_amount")-1)
 		if meta:get_int("item_amount") < 1 then
 			meta:set_string("item","")
