@@ -61,7 +61,7 @@ end
 
 minetest.register_alias("barrel","barrels:barrel")
 minetest.register_craft({
-	output = 'barrels:barrel,2',
+	output = 'barrels:barrel 2',
 	recipe = {
 		{'default:tree','default:tree', 'default:tree'},
 		{'default:tree', '', 'default:tree'},
@@ -212,9 +212,9 @@ minetest.register_alias("locked_barrel","barrels:locked_barrel")
 minetest.register_craft({
 	output = 'barrels:locked_barrel,2',
 	recipe = {
-		{'default:tree','default:tree', 'default:tree'},
-		{'default:tree', 'default:steel_ingot', 'default:tree'},
-		{'default:tree', 'default:tree', 'default:tree'},
+		{'group:tree','group:tree', 'group:tree'},
+		{'group:tree', 'group:steel_ingot', 'group:tree'},
+		{'group:tree', 'group:tree', 'group:tree'},
 	}
 })
 
