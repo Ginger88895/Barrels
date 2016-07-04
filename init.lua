@@ -73,34 +73,59 @@ minetest.register_node("barrels:barrel", {
 	description = "Barrel",
 	tiles = {"barrels_barrel_side.png"},
 	paramtype2 = "facedir",
-	groups = {cracky=2, tubedevice=1,tubedevice_receiver=1,},
-	tube={insert_object=function(pos,node,stack,direction)
-		local meta=minetest.env:get_meta(pos)
-		local inv=meta:get_inventory()
-		if stack:get_name() == meta:get_string("item") then
-		meta:set_int("item_amount",meta:get_int("item_amount")+stack:get_count())
-		stack:clear()
-		return stack
-		end
-		if meta:get_int("item_amount") == 0 then
-		meta:set_int("item_amount",meta:get_int("item_amount")+stack:get_count())
-		meta:set_string("item",stack:get_name())
-		update_item(pos,node)
-		stack:clear()
-		return stack
-		end
-		end,
-		can_insert=function(pos,node,stack,direction)
-		local meta=minetest.env:get_meta(pos)
-		local inv=meta:get_inventory()
-		if stack:get_name() == meta:get_string("item") then
-		return true
+	groups = {cracky=2, tubedevice=1,tubedevice_receiver=1,mesecon=2},
+	tube={
+		insert_object=function(pos,node,stack,direction)
+			local meta=minetest.env:get_meta(pos)
+			if stack:get_name() == meta:get_string("item") then
+				meta:set_int("item_amount",meta:get_int("item_amount")+stack:get_count())
+				stack:clear()
+				return stack
 			end
 			if meta:get_int("item_amount") == 0 then
-		return true
+				meta:set_int("item_amount",meta:get_int("item_amount")+stack:get_count())
+				meta:set_string("item",stack:get_name())
+				update_item(pos,node)
+				stack:clear()
+				return stack
 			end
 		end,
+		can_insert=function(pos,node,stack,direction)
+			if direction.y ~= 0 then 
+				return false
+			end
+			local meta=minetest.env:get_meta(pos)
+			if stack:get_name() == meta:get_string("item") then
+				return true
+			end
+			if meta:get_int("item_amount") == 0 then
+				return true
+			end
+			return false
+		end,
+		connect_sides={left=1,right=1,front=1,back=1},
+	},
+	mesecons={
+		effector={
+			action_on=function(pos,node)
+				local meta=minetest.get_meta(pos)
+				local item=meta:get_string("item")
+				local amount=meta:get_int("item_amount")
+				if amount==0 then
+					return
+				end
+				local itemstack=ItemStack(item)
+				local maxstack=itemstack:get_stack_max()
+				local dropcount=math.min(amount,maxstack)
+				minetest.add_item({x=pos.x,y=pos.y+1,z=pos.z},item..' '..dropcount)
+				meta:set_int("item_amount",amount-maxstack)
+				if meta:get_int("item_amount")==0 then
+					meta:set_string("item","")
+					update_item(pos,node)
+				end
+			end
 		},
+	},
 	legacy_facedir_simple = true,
 	sounds = default.node_sound_stone_defaults(),
 	on_construct = function(pos)
@@ -146,66 +171,30 @@ minetest.register_on_punchnode(function(pos, node, puncher)
 			local keys = {}
 		keys = puncher:get_player_control()
 		local meta = minetest.env:get_meta(pos); 
+		local amount = meta:get_int("item_amount")
 		local stack1 = meta:get_string("item")
-		local stack2 = stack1.." 99"
+		local itemstack = ItemStack(stack1)
+		local maxstack = itemstack:get_stack_max()
+		if keys["sneak"] == false then
+			maxstack = 1
+		end
+		local dumpamount = math.min(maxstack,amount)
+		local stack2 = stack1.." "..dumpamount
 		local items = meta:get_int("item_amount")
 		local inv=puncher:get_inventory()
 		local room1 = inv:room_for_item("main",stack2)
-		if keys["sneak"] == true then
-	if meta:get_int("item_amount")  >= 99 then
 
 		if room1 == true then
 			inv:add_item("main",stack2)
+		else
+			minetest.add_item(puncher:getpos(),stack2)
 		end
-		if room1 == false then
-		minetest.env:add_item(puncher:getpos(),stack2)
-		end
-
-		meta:set_int("item_amount",meta:get_int("item_amount")-99)
-		if meta:get_int("item_amount") < 1 then
-		meta:set_string("item","")
-		meta:set_int("item_amount",0)
-		update_item(pos,node)
-		end
-		return
-	end
-	if meta:get_int("item_amount")  < 99 then
-		if meta:get_int("item_amount")  > 0 then
-		local stack2 = stack1.." "..items
-		local room1 = inv:room_for_item("main",stack2)
-		if room1 == true then
-			inv:add_item("main",stack2)
-		end
-		if room1 == false then
-			minetest.env:add_item(puncher:getpos(),stack2)
-		end
-		meta:set_int("item_amount",meta:get_int("item_amount")-meta:get_int("item_amount"))
-		if meta:get_int("item_amount") < 1 then
+		meta:set_int("item_amount",amount-dumpamount)
+		if meta:get_int("item_amount")==0 then
 			meta:set_string("item","")
-			meta:set_int("item_amount",0)
 			update_item(pos,node)
 		end
-		end
-		return
 	end
-end
-	if keys["sneak"] == false then
-			local room1 = inv:room_for_item("main",stack1)
-		if room1 == true then
-			inv:add_item("main",stack1)
-		end
-		if room1 == false then
-			minetest.env:add_item(puncher:getpos(),stack1)
-		end
-		meta:set_int("item_amount",meta:get_int("item_amount")-1)
-		if meta:get_int("item_amount") < 1 then
-			meta:set_string("item","")
-			meta:set_int("item_amount",0)
-			update_item(pos,node)
-		end
-		return
-end
-end
 end)
 
 minetest.register_alias("locked_barrel","barrels:locked_barrel")
